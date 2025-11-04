@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <StartupObject>TamagotchiLite_AMM_SBO_ESIG1.Program</StartupObject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Compatibility\**" />
+    <EmbeddedResource Remove="Compatibility\**" />
+    <None Remove="Compatibility\**" />
+  </ItemGroup>
+
+</Project>
