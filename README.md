@@ -1,5 +1,3 @@
----
-
 ```markdown
 #  Tamagotchi Lite — ESIG1
 
