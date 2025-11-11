@@ -2,16 +2,21 @@
 
 namespace TamagotchiLite_AMM_SBO_ESIG1.Ecrans
 {
-    /// <summary>
-    /// Écran de feedback après l'action "Jouer"
-    /// </summary>
+    // Écran de feedback après l’action “Jouer”
     internal class AMM_Bonheur_JoueAvecMoi
     {
+        // Méthode qui affiche un message positif après avoir joué avec le Tamagotchi
         public void AfficherMessage()
         {
-            Console.WriteLine("\nActuellement je me sens très joyeux !");
+            // Ligne vide pour aérer l’affichage
+            Console.WriteLine();
+
+            // Message de feedback
+            Console.WriteLine("Actuellement je me sens très joyeux !");
+
+            // Attente d'une touche pour que le joueur puisse lire avant de continuer
             Console.WriteLine("Appuyez sur une touche pour continuer...");
-            Console.ReadKey(true);
+            Console.ReadKey(true); // true = n’affiche pas la touche pressée
         }
     }
 }

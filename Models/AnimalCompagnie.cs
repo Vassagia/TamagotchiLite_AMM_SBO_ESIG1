@@ -2,14 +2,35 @@
 {
     internal class AnimalCompagnie
     {
+        // Espèce du Tamagotchi (ex. Raton laveur, Fennec, Écureuil)
         public string Espece { get; }
-        public string Nom { get; }
+
+        // Nom donné par le joueur
+        public string NomAnimal { get; }
+
+        // Statistiques du Tamagotchi (faim, bonheur, énergie)
         public Stats Stats { get; } = new Stats();
 
-        public AnimalCompagnie(string espece, string nom)
+        // Constructeur : création du Tamagotchi avec une espèce et un nom obligatoires
+        public AnimalCompagnie(string espece, string nomAnimal)
         {
-            Espece = string.IsNullOrWhiteSpace(espece) ? "Axolotl" : espece.Trim();
-            Nom = string.IsNullOrWhiteSpace(nom) ? "Tama" : nom.Trim();
+            // Vérifie que l'espèce est non vide, sinon redemande
+            while (string.IsNullOrWhiteSpace(espece))
+            {
+                Console.Write("Veuillez entrer une espèce valide : ");
+                espece = Console.ReadLine();
+            }
+
+            // Vérifie que le nom est non vide, sinon redemande
+            while (string.IsNullOrWhiteSpace(nomAnimal))
+            {
+                Console.Write("Veuillez donner un nom à votre Tamagotchi : ");
+                nomAnimal = Console.ReadLine();
+            }
+
+            // Supprime les espaces inutiles avant/après
+            Espece = espece.Trim();
+            NomAnimal = nomAnimal.Trim();
         }
     }
 }

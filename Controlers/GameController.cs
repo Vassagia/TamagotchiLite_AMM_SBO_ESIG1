@@ -2,7 +2,6 @@
 using TamagotchiLite_AMM_SBO_ESIG1.Ecrans;
 using TamagotchiLite_AMM_SBO_ESIG1.Models;
 using TamagotchiLite_AMM_SBO_ESIG1.Services;
-using TamagotchiLite_AMM_SBO_ESIG1.Utils;
 
 namespace TamagotchiLite_AMM_SBO_ESIG1.Controllers
 {
@@ -16,48 +15,61 @@ namespace TamagotchiLite_AMM_SBO_ESIG1.Controllers
 
         private readonly GameService _game = new();
 
+        // Point d'entrée pour lancer une nouvelle partie
         public void NouvellePartie()
         {
-            string espece = AskChoice("Choisissez votre animal", new[] { "Raton laveur", "Fennec", "Écureuil" });
-            string nom = Input.ReadNonEmpty("Nom du Tamagotchi: ");
-            var pet = new AnimalCompagnie(espece, nom);
+            // L'écran SBO_Naissance gère le choix de l'animal et du nom
+            AnimalCompagnie pet = SBO_Naissance.EcranNaissance();
 
             bool quitter = false;
+
+            // Boucle principale de la partie
             while (!quitter)
             {
                 int choix = _jeu.AfficherEtatEtChoix(pet);
 
                 switch (choix)
                 {
-                    case 1: _game.AgirNourrir(pet); _faimMsg.AfficherMessage(); break;
-                    case 2: _game.AgirJouer(pet); _bonheurMsg.AfficherMessage(); break;
-                    case 3: _game.AgirDormir(pet); _energieMsg.AfficherMessage(); break;
-                    case 4: quitter = true; continue;
+                    case 1:
+                        _game.AgirNourrir(pet);
+                        _faimMsg.AfficherMessage();
+                        break;
+
+                    case 2:
+                        _game.AgirJouer(pet);
+                        _bonheurMsg.AfficherMessage();
+                        break;
+
+                    case 3:
+                        _game.AgirDormir(pet);
+                        _energieMsg.AfficherMessage();
+                        break;
+
+                    case 4:
+                        // Le joueur choisit de quitter la partie
+                        quitter = true;
+                        continue;
                 }
 
+                // Dérive naturelle des stats
                 _game.DeriveNaturelle(pet);
 
+                // Vérification de la mort
                 if (_game.EstMort(pet))
                 {
                     bool rejouer = _fin.AfficherEtRedemander(pet);
+
                     if (rejouer)
                     {
-                        espece = AskChoice("Choisissez votre animal", new[] { "Raton laveur", "Fennec", "Écureuil" });
-                        nom = Input.ReadNonEmpty("Nom du Tamagotchi: ");
-                        pet = new AnimalCompagnie(espece, nom);
+                        // Pour rejouer, on repasse par l'écran SBO_Naissance
+                        pet = SBO_Naissance.EcranNaissance();
                         continue;
                     }
+
                     quitter = true;
                 }
             }
         }
-
-        private static string AskChoice(string label, string[] options)
-        {
-            Console.Clear();
-            Console.WriteLine(label);
-            for (int i = 0; i < options.Length; i++) Console.WriteLine($"{i + 1}. {options[i]}");
-            return options[Input.ReadInt("Votre choix: ", 1, options.Length) - 1];
-        }
     }
 }
+

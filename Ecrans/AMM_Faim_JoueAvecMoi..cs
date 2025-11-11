@@ -2,16 +2,21 @@
 
 namespace TamagotchiLite_AMM_SBO_ESIG1.Ecrans
 {
-    /// <summary>
-    /// Écran de feedback après l'action "Nourrir"
-    /// </summary>
+    // Écran de feedback après l’action “Nourrir”
     internal class AMM_Faim_JoueAvecMoi
     {
+        // Méthode qui affiche un message après que le Tamagotchi a été nourri
         public void AfficherMessage()
         {
-            Console.WriteLine("\nActuellement je me sens mieux, j'avais faim !");
+            // Ligne vide pour aérer l’affichage
+            Console.WriteLine();
+
+            // Message de feedback positif
+            Console.WriteLine("Actuellement je me sens mieux, j'avais faim !");
+
+            // Attente d'une touche pour que le joueur puisse lire avant de continuer
             Console.WriteLine("Appuyez sur une touche pour continuer...");
-            Console.ReadKey(true);
+            Console.ReadKey(true); // true = n’affiche pas la touche appuyée
         }
     }
 }
