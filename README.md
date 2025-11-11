@@ -1,213 +1,222 @@
-# TamagotchiLite_AMM_SBO_ESIG1
-Projet console en C# – jeu Tamagotchi pour l’école ESIG
+---
 
-<<<<<<< Updated upstream
-## Comment utiliser Git / GitHub / Git Desktop
-=======
-# Architecture et flux d’exécution
+```markdown
+#  Tamagotchi Lite — ESIG1
 
-Le projet suit une séparation des responsabilités basique :
+##  Objectif du projet
+Ce projet est une **application console en C#** inspirée du célèbre Tamagotchi.  
+Le joueur doit **prendre soin de son animal virtuel** en le nourrissant, en jouant avec lui et en le faisant dormir.  
+Le but : **le garder en vie le plus longtemps possible**.
 
-* **Program** démarre l’app et délègue tout au **MenuController**.
-* **MenuController** affiche le menu, route l’utilisateur vers:
+Chaque action influence trois jauges :
+-  **Faim**
+-  **Énergie**
+-  **Bonheur**
 
-  * les **écrans** `SBO_*` et `AMM_*`(statiques),
-  * puis lance la **boucle de jeu** orchestrée par **GameController**.
-* **GameController** pilote la partie: affiche l’état, capte le choix, applique l’action via **GameService**, fait dériver les jauges, et décide fin/rejouer.
-* **Models** porte les données (l’animal et ses jauges).
-* **Ecrans** contient l’UI console.
-* **Utils** regroupe l’I/O console robuste et les helpers d’affichage/rand, y compris des fonctions de compatibilité attendues par les `SBO_*` aprés l'ajout de son code.
-
-Le Program lance le menu, tuon fait un choix, ça crée le Tamagotchi, la boucle se déroule jusqu’à ce qu’il aille bien, pas bien, ou très pas bien. 
+Si l’une des jauges atteint zéro, l’animal **meurt** et le jeu propose de recommencer.
 
 ---
 
-# Dossiers et fichiers (rôle + contrat)
+##  Structure générale du projet
 
-## 1) `/Controllers`
-
-### `MenuController.cs`
-
-* **Rôle:** point d’entrée UX. Affiche le menu “Commencer / Règles / Quitter”.
-* **Contrat:**
-
-  * `Run()` boucle tant que l’utilisateur ne quitte pas.
-  * Appelle directement les écrans statiques `SBO_ReglesDuJeu.EcranAfficherReglesJeu()` et `SBO_Quitter.EcranAuRevoir()`.
-  * Pour “Commencer”, on laisse s’afficher la naissance (`SBO_Naissance.EcranNaissance()`), puis on enchaîne sur la vraie partie via `new GameController().NouvellePartie()`.
-
-### `GameController.cs`
-
-* **Rôle:** cœur métier. Orchestration de la partie.
-* **Contrat (méthode publique):** `NouvellePartie()`
-
-  * Crée l’animal (`AnimalCompagnie`) à partir de deux entrées utilisateur: espèce (parmi 3) et nom (non vide).
-  * Boucle:
-
-    1. `AMM_JoueAvecMoi.AfficherEtatEtChoix(pet)` affiche l’état (Faim/Bonheur/Énergie) et retourne un choix [1..4].
-    2. Selon le choix, appelle **GameService**:
-
-       * Nourrir → `_game.AgirNourrir(pet)` + message `AMM_Faim_JoueAvecMoi`.
-       * Jouer → `_game.AgirJouer(pet)` + message `AMM_Bonheur_JoueAvecMoi`.
-       * Dormir → `_game.AgirDormir(pet)` + message `AMM_Energie_JoueAvecMoi`.
-       * Quitter → sort de la boucle.
-    3. Applique la **dérive naturelle**: `_game.DeriveNaturelle(pet)`.
-    4. Test de fin: `_game.EstMort(pet)` → si oui, `AMM_FinDuJeu.AfficherEtRedemander(pet)` propose de rejouer (recrée un animal) ou de sortir.
-
- Toute logique de progression/équilibrage est centralisée dans le service des Controllers.
+###  `Program.cs`
+Point d’entrée du jeu.  
+Configure la console (UTF-8, titre de la fenêtre) puis lance le **Menu principal** via `MenuController`.
 
 ---
 
-## 2) `/Ecrans`
+###  `Controllers/`
+Les **contrôleurs** gèrent la logique du jeu et la navigation entre les écrans.
 
-### Écrans pédagogiques de ta collègue: `SBO_*`
+####  `GameController.cs`
+C’est le **cœur du jeu** :
+1. Appelle l’écran **Naissance** (`SBO_Naissance`) pour choisir l’animal et son nom.  
+2. Lance la boucle principale :
+   - Affiche les jauges du Tamagotchi.  
+   - Propose les actions : **Nourrir**, **Jouer**, **Dormir** ou **Quitter**.  
+3. Fait évoluer naturellement les jauges.  
+4. Vérifie si l’animal est encore en vie.  
+5. Si mort → affiche l’écran **Fin du jeu** (`AMM_FinDuJeu`) et propose de recommencer.
 
-* **`SBO_Naissance.cs`**
-  Écran statique de naissance (choix visuel/texte + nom). Il ne renvoie rien, on ne le modifie pas. Il prépare mentalement le joueur, puis on lance la vraie partie dans `GameController`.
-* **`SBO_ReglesDuJeu.cs`**
-  Affiche les règles. Propose 1) commencer 2) retour 3) quitter. Appelle les écrans statiques correspondants.
-* **`SBO_Quitter.cs`**
-  Affiche “Au revoir”, temporise 5 secondes, et termine.
+####  `MenuController.cs`
+Affiche le menu principal du jeu :
+```
 
-> Ces fichiers contiennent des appels à des helpers tels que `AfficherLigneHaut()`, `AfficherLigneBas()`, `Vide()` et `VerificationSaisie()`. Ils sont **fourni par nos Utils** (compatibilité), donc pas besoin de toucher aux `SBO_*`.
+1. Commencer une partie
+2. Règles du jeu
+3. Quitter
 
-### Écrans feedback côté toi: `AMM_*`
+````
 
-* **`AMM_JoueAvecMoi.cs`**
-  Affiche l’état courant (`pet.Stats`) et propose 1) Nourrir 2) Jouer 3) Dormir 4) Quitter. Retourne un `int` [1..4]. Pas de logique d’état ici, uniquement l’UI console.
-* **`AMM_Faim_JoueAvecMoi.cs`**
-  Message après l’action “Nourrir”.
-* **`AMM_Bonheur_JoueAvecMoi.cs`**
-  Message après l’action “Jouer”.
-* **`AMM_Energie_JoueAvecMoi.cs`**
-  Message après l’action “Dormir”.
-* **`AMM_FinDuJeu.cs`**
-  Écran de fin. Affiche le décès, propose de recommencer, retourne `true/false`.
-
-**Principe:** les `AMM_*` sont “dumb UIs” qui n’implémentent que l’affichage. Toute modification d’état se fait ailleurs.
-
----
-
-## 3) `/Models`
-
-### `AnimalCompagnie.cs`
-
-* **Rôle:** entité métier.
-* **Champs/props:**
-
-  * `Espece` (string), `Nom` (string), `Stats` (instance de `Stats`).
-* **Contrat:** constructeur prend `espece` et `nom`, applique des valeurs par défaut si vide (“Axolotl”, “Tama”). Le modèle ne contient **aucune logique de jeu**: il porte seulement les données.
-
-### `Stats.cs`
-
-* **Rôle:** état numérique du pet.
-* **Props:** `Faim`, `Energie`, `Bonheur`, initialisées à 70.
-* **Invariants:** valeurs clampées entre 0 et 100 via `Clamp()`.
-* **Interprétation:**
-
-  * Faim: 0 = repu/mort de faim selon ton gameplay; 100 = affamé si tu inverses la sémantique, mais ici on travaille en “réserves” positives: 0 est critique.
-  * Énergie/Bonheur: 0 = critique; 100 = en forme.
-    En jeu, on reste pragmatiques: ce sont des jauges normalisées à 100.
+Le menu ne gère **que la navigation**.  
+Quand on choisit "Commencer une partie", il appelle le `GameController`, qui lui-même appelle l’écran **Naissance**.  
+➡️ Cela évite tout doublon d’écran.
 
 ---
 
-## 4) `/Services`
+###  `Ecrans/`
+Contient tous les écrans visibles par le joueur.
 
-### `GameService.cs`
+| Fichier | Rôle |
+|----------|------|
+| `SBO_Naissance.cs` | Écran principal pour choisir l’espèce et le nom du Tamagotchi. |
+| `SBO_ReglesDuJeu.cs` | Affiche les règles et les conseils. |
+| `SBO_Quitter.cs` | Écran d’au revoir avant la fermeture du jeu. |
+| `AMM_JoueAvecMoi.cs` | Affiche les jauges et les actions possibles. |
+| `AMM_Faim_JoueAvecMoi.cs` | Message de feedback après avoir nourri l’animal. |
+| `AMM_Energie_JoueAvecMoi.cs` | Message après que l’animal ait dormi. |
+| `AMM_Bonheur_JoueAvecMoi.cs` | Message après avoir joué. |
+| `AMM_FinDuJeu.cs` | Écran de fin quand l’animal meurt. |
 
-* **Rôle:** logique métier pure et équilibrage.
-* **APIs:**
-
-  * `AgirNourrir(AnimalCompagnie)`, `AgirJouer(...)`, `AgirDormir(...)`: appliquent un **boost** constant (+20) à la jauge visée, **capé** à 100.
-  * `DeriveNaturelle(AnimalCompagnie)`: applique une **baisse aléatoire** (min/max configurables) sur Faim/Bonheur/Énergie à chaque tour. C’est ta friction naturelle.
-  * `EstMort(AnimalCompagnie)`: mort si **une** jauge tombe à 0 (Faim, Bonheur, Énergie). Simple, lisible.
-* **Pourquoi ici:** si demain tu changes le balance (boost +25, dérive plus forte, mort si deux jauges à 0, etc.), tu touches **uniquement** ce fichier. Le reste ne bouge pas.
-
-### `PersistenceService.cs`
-
-* **Rôle:** placeholder pour sauvegarder/charger une partie (ex: JSON sur disque).
-* **Statut:** volontairement stub, prêt à être branché sans parasiter la logique.
-
----
-
-## 5) `/Utils`
-
-### `Input.cs`
-
-* **Rôle:** saisies console robustes.
-* **APIs:**
-
-  * `ReadInt(prompt, min, max)`: boucle jusqu’à un entier valide dans l’intervalle.
-  * `ReadNonEmpty(prompt)`: boucle jusqu’à un texte non vide.
-  * **Compat** `VerificationSaisie(min, max)`: clone simple de ce qui est attendu par le code `SBO_*`. Tu évites d’éditer leurs fichiers en leur fournissant l’outil qu’ils présupposent.
-
-### `Rng.cs`
-
-* **Rôle:** aléatoire et helpers d’affichage “cours”.
-* **APIs:**
-
-  * `Next(min, maxInclusive)`, `Chance(percent)` pour le hasard.
-  * **Compat affichage**: `AfficherLigneHaut()`, `AfficherLigneBas()`, `Vide()` pour les cadres visuels utilisés par `SBO_*`.
-    Zero magie: c’est juste pour que les écrans de ta collègue compilent tels quels.
+>  L’écran **Naissance** est désormais **le seul fonctionnel** et utilisé partout.  
+> Aucun autre écran ne repose la même question.
 
 ---
 
-## 6) Fichiers racine
+### `Models/`
+Les **classes de données** du jeu.
 
-### `Program.cs`
-
-* **Rôle:** point d’entrée réel du projet. Configure l’encodage UTF-8 (accents), titre de la console, démarre `MenuController`.
-* **Point à retenir:** dans les propriétés du projet, **Objet de démarrage** doit être `…Program`. Ça évite le `Main` d’un écran de démo.
-
-### `SBO_GlobalUsings.cs`
-
-* **Rôle:** `global using` utiles au compilateur pour rendre certaines fonctions accessibles partout sans `using` local.
-* **Ici:** on importe `Compat` si tu gardes des extensions, ou on peut le laisser minimal. C’est surtout pour empêcher d’ajouter des `using` dans les `SBO_*`.
+- `AnimalCompagnie` → représente le Tamagotchi (nom, espèce, statistiques).  
+- `Stats` → contient les jauges : `Faim`, `Énergie`, `Bonheur`.
 
 ---
 
-# Cycle d’un tour de jeu (résumé 15 secondes)
+###  `Services/`
+Les classes qui contiennent la **logique du jeu**.
 
-1. Menu → Naissance (pédago `SBO_`) → `GameController.NouvellePartie()`.
-2. `AMM_JoueAvecMoi` affiche l’état et renvoie 1..4.
-3. `GameService` applique l’action (+20 capé) puis la dérive aléatoire.
-4. `GameService.EstMort()` décide la fin. Si mort → `AMM_FinDuJeu` propose de rejouer.
-5. Retour au menu si l’utilisateur quitte.
+#### `GameService.cs`
+Gère toutes les actions et leur impact sur les jauges :
+- `AgirNourrir()` augmente la faim.  
+- `AgirJouer()` augmente le bonheur.  
+- `AgirDormir()` augmente l’énergie.  
+- `DeriveNaturelle()` fait baisser les jauges avec le temps.  
+- `EstMort()` vérifie si l’animal est toujours en vie.  
 
----
 
-# Décisions de design (arguments qui claquent)
-
-* **Séparation nette UI / logique**: les écrans n’ont aucune “intelligence”. Toute la balance du jeu vit dans `GameService`. C’est testable, remplaçable, et ça t’évite un spaghetti console.
-* **Compat “cours”**: on n’a **pas retouché** les fichiers `SBO_*`. On a exposé les helpers qu’ils attendent (`Vide`, `AfficherLigneHaut`, `VerificationSaisie`), donc ils tournent “as-is”. Tu préserves l’historique de ta binôme.
-* **Modèle minifié mais suffisant**: `AnimalCompagnie` + `Stats` avec invariants [0..100]. Lisible en 1 minute, défendable en 10.
-* **Extension facile**: ajouter une action “Laver”, “Soigner”, etc. = 3 pas:
-
-  1. Ajouter une option dans `AMM_JoueAvecMoi`.
-  2. Ajouter `AgirLaver` dans `GameService`.
-  3. Ajouter un écran feedback `AMM_Proprete_JoueAvecMoi` si tu veux un message.
 
 ---
 
-# Pièges classiques (et comment tu les as évités)
+###  `Utils/`
+Les outils généraux utilisés dans tout le projet.
 
-* **Appeler `new SBO_Naissance()` sans méthode → ne fait rien.**
-  On appelle la **méthode statique**: `SBO_Naissance.EcranNaissance();`
-* **Mélange de namespaces `Tamagotchi.*` vs `TamagotchiLite_AMM_SBO_ESIG1.*`.**
-  Tout le projet est uniformisé. Un seul namespace, zéro surprise.
-* **Plusieurs `Main`.**
-  Objet de démarrage fixé sur `Program`, le reste est décoratif.
+- `Rng` ou le Random Number Generator → gère les nombres aléatoires et l’affichage esthétique :  
+  cadres (`AfficherTexteCadre`), lignes, espaces, etc.  
+- `Input` → gère la lecture des entrées clavier (chiffres valides, texte non vide, vérification des bornes).
 
 ---
 
-# TL;DR pour ton README
+##  Arborescence du projet
 
-* **Controllers**: Menu et orchestration de la partie (routage + boucle de jeu).
-* **Ecrans**: UI console pure. `SBO_*` = écrans pédagogiques inchangés; `AMM_*` = retours d’actions et fin.
-* **Models**: données du Tamagotchi, jauges normalisées.
-* **Services**: logique métier du jeu (actions, dérive, mort).
-* **Utils**: entrées console sûres + helpers d’affichage et compatibilité.
-* **Program**: point d’entrée, UTF-8, lance le menu.
+```bash
+TamagotchiLite_AMM_SBO_ESIG1/
+├── Controllers/
+│   ├── GameController.cs
+│   └── MenuController.cs
+│
+├── Ecrans/
+│   ├── AMM_Bonheur_JoueAvecMoi.cs
+│   ├── AMM_Energie_JoueAvecMoi.cs
+│   ├── AMM_Faim_JoueAvecMoi.cs
+│   ├── AMM_FinDuJeu.cs
+│   ├── AMM_JoueAvecMoi.cs
+│   ├── SBO_Naissance.cs
+│   ├── SBO_Quitter.cs
+│   └── SBO_ReglesDuJeu.cs
+│
+├── Models/
+│   ├── AnimalCompagnie.cs
+│   └── Stats.cs
+│
+├── Services/
+│   ├── GameService.cs
+│   └── (PersistenceService.cs)  supprimé
+│
+├── Utils/
+│   ├── Input.cs
+│   └── Rng.cs
+│
+├── Program.cs
+└── README.md
+````
 
-Tu peux le présenter “comme ton bébé” sans cligner: c’est clean, cohérent et défense-proof.
+---
 
->>>>>>> Stashed changes
+##  Fonctionnement du jeu
+
+1. Le programme démarre (`Program.cs`).
+2. Affichage du **menu principal** (`MenuController`).
+3. Si le joueur choisit **Commencer une partie** :
+
+   * L’écran **Naissance** s’affiche.
+   * Le joueur choisit un animal et lui donne un nom.
+4. Le jeu commence : le joueur choisit des actions pour maintenir les jauges.
+5. Si une jauge tombe à 0 → le Tamagotchi meurt.
+6. L’écran de fin propose de rejouer ou de quitter.
+
+---
+
+##  Exemple d’utilisation
+
+```text
+╔════════════════════════════════════════╗
+║           Tamagotchi Lite              ║
+╚════════════════════════════════════════╝
+
+1. Commencer une partie
+2. Règles du jeu
+3. Quitter
+
+Votre choix : 1
+```
+
+Puis :
+
+```text
+╔════════════════╗
+║    Naissance   ║
+╚════════════════╝
+
+1. Raton laveur
+2. Fennec
+3. Écureuil
+
+Choisissez votre animal (1,2 ou 3) :
+Votre œuf éclot...
+Donnez-lui un nom :
+> Pépito
+
+Bienvenue à Pépito ! Prenez bien soin de lui !
+```
+
+---
+
+##  Points importants à retenir
+
+* ✅ L’écran **Naissance** de SBO est celui utilisé par tout le jeu.
+* ✅ Le menu appelle uniquement le `GameController`.
+* ✅ Aucun doublon d’écran.
+* ✅ Le code fonctionne entièrement en **console .NET / Visual Studio**.
+* ✅ Les cadres et caractères spéciaux s’affichent bien grâce à **l’encodage UTF-8**.
+* ✅ ...
+
+---
+
+##  Crédits
+
+Projet développé par :
+
+* **Ana Maria Voisard**
+* **Sophie Borgeaud**
+
+> Réalisé dans le cadre du cours **ESIG1 – Développement C# : Tamagotchi Lite**.
+
+---
+
+##  Dernière mise à jour
+
+**Novembre 2025 — version stable, sans doublons d’écran**
+
+```
+
+---
+
